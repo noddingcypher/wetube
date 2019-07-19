@@ -1,4 +1,5 @@
 #Wetube
+Cloning Youtube with Vanilla and NodeJS
 
 Node Package Manager (NPM)
 
@@ -21,3 +22,21 @@ Express of nodeJS
 Operating a server is quite the same, repetitive
 
 - few things left to be updated
+
+GET POST
+
+- GET method gets the info
+- POST method sends the info to the web site from the browser
+
+Babel : new JS code를 사용할 수 있게 한다
+
+- import
+- const 함수명 = () => ...
+  사용법
+- npm install @babel/node
+  다양한 stage 존재
+- env 사용 : 최신이면서 안정적
+- npm install @babel/preset-env
+- npm install @babel/core
+
+Nodemon : 서버를 매번 끄고 다시 시작하지 않아도 되게 한다
