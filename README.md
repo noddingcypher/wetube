@@ -82,3 +82,9 @@ Router : many routes inside
 만들어진 object를 export 할 수 있다
 export default object 하면 import object from "./object가있는파일명"
 export 만 하면 import {object} from "./object가있는파일명"
+
+MVC
+
+- M data
+- V how data looks
+- C function that looks for data
