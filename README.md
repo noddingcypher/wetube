@@ -1,6 +1,19 @@
 #Wetube
 Cloning Youtube with Vanilla and NodeJS
 
+## Pages:
+
+- [ ] Home
+- [ ] Join
+- [ ] Login
+- [x] Search
+- [ ] User Detail
+- [ ] Edit Profile
+- [ ] Change PassWord
+- [ ] Upload
+- [ ] Video Detail
+- [ ] Edit Video
+
 Node Package Manager (NPM)
 
 - place where somethings like express shared
@@ -88,3 +101,8 @@ MVC
 - M data
 - V how data looks
 - C function that looks for data
+
+ES6 식의 변수 설정법
+
+- const { query : term : searchingBy} = req
+  == const searchingBy = req.query.term
