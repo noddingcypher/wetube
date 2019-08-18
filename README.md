@@ -106,3 +106,14 @@ ES6 식의 변수 설정법
 
 - const { query : term : searchingBy} = req
   == const searchingBy = req.query.term
+
+MongoDB와 JS를 연결시키는 법
+
+- MongoDB & NodeJS
+- MongoDB는 C++로 만들어짐.
+- JS와 MongoDB를 연결하려면 adapter필요
+- MongoDB로부터 instruction을 받아서 JS 코드 작성 가능 -> Mongoose가 해줌
+
+Mongoose JS : Object modelling for node.js
+
+Dotenv - npm start dotenv - 외부에서 중요한 value가 보이지 않도록 하기 위해서 사용 - .env 생성 - .gitignore에 .env 추가 - .env 파일 안에 숨기고자 하는 key value 입력 - MONGO_URL = "dfddfdf.." - PORT = XXXX - 사용할때는 - import dotenv from "dotenv" - dotenv.config(); - process.env 안에 key 저장 - process.env.PORT , process.env.MONGO_URL ... - 이렇게 하지 않으면 github에서 다른 사용자들이 중요한 정보들을 보게 됨
