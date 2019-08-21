@@ -117,3 +117,10 @@ MongoDB와 JS를 연결시키는 법
 Mongoose JS : Object modelling for node.js
 
 Dotenv - npm start dotenv - 외부에서 중요한 value가 보이지 않도록 하기 위해서 사용 - .env 생성 - .gitignore에 .env 추가 - .env 파일 안에 숨기고자 하는 key value 입력 - MONGO_URL = "dfddfdf.." - PORT = XXXX - 사용할때는 - import dotenv from "dotenv" - dotenv.config(); - process.env 안에 key 저장 - process.env.PORT , process.env.MONGO_URL ... - 이렇게 하지 않으면 github에서 다른 사용자들이 중요한 정보들을 보게 됨
+
+Schema : DB의 요소들의 형식을 정해놓은 규칙
+Model : data가 들어오는 통로
+
+Model을 어떻게 사용하느냐
+ - import Video(Model name) from "../models/Video"
+ - async(req,res)
