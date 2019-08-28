@@ -124,3 +124,14 @@ Model : data가 들어오는 통로
 Model을 어떻게 사용하느냐
  - import Video(Model name) from "../models/Video"
  - async(req,res)
+
+Webpack
+- module bundler
+- a bunch of files (js, css, saas 등등) 을 담아와서 브라우저가 이해할 수 있는 js, css 등으로 변환해줌
+- npm install webpack webpack-cli
+- package.json에서 script 부분에서 start 를 dev:server로 바꾸고, dev:assets를 추가해서 webpack 입력
+- "dev:assets" : "webpack"
+- npm run dev:assets을 실행하면 자동으로 webpack.config.js 파일을 찾음
+- webpack은 exported configuration object를 찾는다
+
+@babel/polyfil
