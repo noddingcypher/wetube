@@ -122,10 +122,12 @@ Schema : DB의 요소들의 형식을 정해놓은 규칙
 Model : data가 들어오는 통로
 
 Model을 어떻게 사용하느냐
- - import Video(Model name) from "../models/Video"
- - async(req,res)
+
+- import Video(Model name) from "../models/Video"
+- async(req,res)
 
 Webpack
+
 - module bundler
 - a bunch of files (js, css, saas 등등) 을 담아와서 브라우저가 이해할 수 있는 js, css 등으로 변환해줌
 - npm install webpack webpack-cli
@@ -135,3 +137,22 @@ Webpack
 - webpack은 exported configuration object를 찾는다
 
 @babel/polyfil
+
+인증- passport라는 middleware 사용
+인증이란, 브라우저 상에 쿠키(cookie)를 설정해주면 쿠키를 통해서 사용자 ID
+등을 알 수 있을 테고, passport가 자동으로 쿠키를 가져와서 인증이 완료된 user
+object를 controller에 넘겨준다
+
+Cookie란
+
+- 브라우저 상에 저장할 수 있는 것
+- 요청(req)에 대해서 백엔드(back-end)로 전송될 정보들이 담겨있음. 자동으로 이뤄짐
+  Passport 쿠키를 생성하고 브라우저에 저장하고 유저에게 해당 쿠키를 제공. 자동으로.
+
+Serialization
+
+- 어떤 정보가 cookie로 넘어갈 지 알려주는 역할
+
+Deserialization
+
+- 어떤 사용자가 해당 필드(쿠키에 있는 정보)에 해당하는지 찾는것

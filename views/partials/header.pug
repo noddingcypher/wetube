@@ -1,12 +1,12 @@
 header.header
     .header__wrapper
-        .header__colomn
+        .header__column
             a(href=routes.home)
                 i.fab.fa-youtube
         .header__column
             form(action =routes.search, method = "get")
                 input(type="text", placeholder ="Search by term ...", name= "term")
-        .header__colomn
+        .header__column
             ul 
                 if !user.isAuthenticated
                     li
