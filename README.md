@@ -747,10 +747,11 @@ mongo
 > videos
 > db.videos.remove({})
 > exit
-
-지금 현 상황에서 문제
-= upload된 이후에 home 페이지로 가보면 video link가 깨져있다. 왜냐하면 해당 video의 route가 존재하지 않기 때문.
-지금은 localhost://4000/uploads/videos/videoId로 되어 있지만 이에 해당하는 routes는 만든 적이 없다.
+> help (도움말)
+>
+> 지금 현 상황에서 문제
+> = upload된 이후에 home 페이지로 가보면 video link가 깨져있다. 왜냐하면 해당 video의 route가 존재하지 않기 때문.
+> 지금은 localhost://4000/uploads/videos/videoId로 되어 있지만 이에 해당하는 routes는 만든 적이 없다.
 
 어떻게 만드느냐
 express.static() 사용
@@ -784,6 +785,11 @@ user-generated content는 분리된 server에 존재해야 함.
 
 uploads는 .ignore에 추가할것.
 
+editVideo controller에서
+input 내용에 기존의 내용을 띄우고 싶으면 input 안에 value 속성을 추가해서 value = video.title이라고 하면 됨.
+textarea는 value 속성이 없음. textarea() = video.description이라고 하면 됨.
+
+editVideo(id)
 videos/videoId에서 videoId를 받아오고 싶다면?
 videoId는 routes에서 /:id에 해당함.
 controller는 :id를 변수로 인식하고 여기 어떤 값이 들어있다면 이를 req.params에 넣어놓음.
@@ -802,21 +808,286 @@ const {
 params : {id},
 body : {title, description}
 } = req;
-await Video.findOneAndUpdate({_id:id}, {title, description});
+await Video.findOneAndUpdate({\_id:id}, {title, description});
 
 2019.11.26 #3.9
 
-Webpack
+\_id라고 하는 이유는 video 객체에 id는 \_id로 저장되어 있기 때문.
+mongoose가 저절로 \_id를 id로 인식할 줄 알았지만 그러지 않기 때문에 이런 식으로 써줘야함.
+
+findOneAndUpdate takes two arguments. The first one is an object with conditions about how to find the object.
+So, in this case, we are doing findOneAndUpdate({id:id}, SECOND_ARG)
+The second argument is the data you want to update on the object that you find with the FIRST_ARGUMENT
+findOneAndUpdate({id:1},{title:"hello"}) will find the element with the id: 1 and will change the title to 'hello'
+
+deleteVideo
+
+- findOneAndRemove() 사용
+- await Video.findOneAndRemove({\_id:id})
+
+home 화면의 video 목록에서 나중에 추가된 비디오가 위에 오도록 하는 방법
+await Video.find({}).sort({\_id:-1})
+
+- -1은 위아래 순서를 바꾸겠다는 약속
+- {title:-1}로 하면 제목 alphabet 역순으로 하겠다는 뜻
+
+ESLint
+
+- Linter
+  - 코드 수정을 도와주는 extension
+    > npm install eslint
+- npm install eslint -g라고 하면 모든 프로젝트에서 사용 가능. 일일이 설치할 필요 없이.
+  > eslint --init
+  > dev dependencies에 설치 될 것임
+
+prettier등의 formatter extension을 사용하고 있어서 eslint에게 format 부분에 대해서는 조용하도록 하기 위해서는
+
+> npm install eslint-config-prettier
+> 하고 .eslintrc.json에 추가
+> {
+
+    "extends": ["plugin:prettier/recommended"]
+
+}
+그리고
+
+> npm install eslint-plugin-prettier
+> npm install prettier -D
+
+eslint는 코드 상 몇가지 에러들을 미리 파악해서 표시해줌
+만약 어떤 rule은 사용하고 싶지 않으면 (예를 들어 no-console)
+.eslintrc.json에서 다음과 같이 추가
+{
+rules:{
+"no-console" : "off"
+}
+}
+
+search controller 구현
+
+regular expression
+
+- regex101.com
+  [d] d를 포함하는
+
+regex option
+
+- case insensitive 등등..
+
+검색 시에 regex를 이용해서 입력된 단어가 포함되는 동영상을 모두 찾고자 할떄
+await Video.find({})
+의 {}안에는 find method의 option이 들어간다.
+let videos = await Video.find({title:{$regex : searchingBy, $options : "i"}})
+
+\$options의 i는 case insensitive를 의미
+videos는 변경되는, 즉 reassign되는 변수이기 때문에 let으로 설정. 아니라면 const.
+
+Comment는 아직 하지 않을것.
+댓글 부분은 front-end에서 ajax와 vanilla JS로 만들거거든.
+
+- 원래는 form에서 내용을 전송하면 새로 고침됨.
+- 근데 그러지 않고 다 작성하고 enter를 누르면 api로 댓글을 보내서 새로고침 없이 같은 위치로 오도록 할 것임
+
+Front-end 작업에서는 Webpack을 사용할 것입니다리.
 
 - module bundler
+  - 여러 파일(.js, .hbs, .png, .sass, .jpg)을 webpack에게 주면 완전히 호환되는 static 파일로 (.js, .css, .jpg, .png) 변환해줌.\
+  - 이 프로젝트에서 사용하는 ES6 js, sass(sexy css) 같은 modern JS를 webpack안에 넣고 이걸 normal CSS, normal JS로 바꿔줌
 - a bunch of files (js, css, saas 등등) 을 담아와서 브라우저가 이해할 수 있는 js, css 등으로 변환해줌
-- npm install webpack webpack-cli
+  > npm install webpack webpack-cli
+  - webpack은 파일에서 사용하기 위함. -cli는 terminal에서 사용하기 위함
+
+webpack.config.js가 생성될 거임.
+
 - package.json에서 script 부분에서 start 를 dev:server로 바꾸고, dev:assets를 추가해서 webpack 입력
 - "dev:assets" : "webpack"
 - npm run dev:assets을 실행하면 자동으로 webpack.config.js 파일을 찾음
 - webpack은 exported configuration object를 찾는다
 
+webpack.config.js
+
+- 100% client code
+  - 서버 코드와는 연관이 없다
+  - 즉, dev:server 안에 있는 babel-node (ES6 코드를 사용할 수 있게 하는 module)을 사용할 수 없다는 뜻
+  - 여기서는 normal JS를 써야함.
+    Client code is what the user will download when he goes to our page. Client code is html/css/img/js etc
+
+const config={
+
+}
+
+module.exports = config; (옛날 문법으로 export하는 법)
+
+webpack의 entry와 output
+
+- entry는 파일들이 어디에서 왔는가?
+- output은 파일들을 어디로 넣을 것인가?
+
+assets 폴더 형성
+
+- js 폴더 : main.js 파일
+- scss 폴더 : styles.scss
+
+webpack.config.js 안에 다음을 추가
+
+const ENTRY_FILE =
+
+const OUTPUT_DIR =
+
+- path package 를 import하기 (path package는 경로를 absolute하게 만들어줌. 즉 컴퓨터나 서버에서의 전체 경로를 찾아줌)
+  const path = require ("path") (webpack.config.js에서는 normal JS 사용해야 함)
+
+const ENTRY_FILE = path.resolve(**dirname, "assets", "js", "main.js");
+const OUTPUT_DIR = path.join(**dirname, "static");
+
+** \_\_dirname은 현재 프로젝트의 디렉토리 이름. 전역 변수.
+** file에는 resolve, directory에는 join을 쓴다.
+
+The two functions deal with segments starting with / in very different ways; join will just concatenate it with the previous argument, however resolve will treat this as the root directory, and ignore all previous paths - think of it as the result of executing cd with each argument:
+
+The resolve method creates absoulte path from right to left until an absolute path is constructed
+
+- config 구성
+  const config = {
+  entry: ENTRY_FILE,
+  output : {
+  path: OUTPUT_DIR,
+  filename: "[name].[format]" (우리가 export할 entry 파일의 name)
+  }
+
+Webpack needs one entry point, so we import everything in the main.js and then Webpack will separate it for us.
+
+- 따라서 main.js에 styles.scss를 import 한것
+
+entry
+The point or points where to start the application bundling process. If an array is passed then all items will be processed.
+A dynamically loaded module is not an entry point.
+Simple rule: one entry point per HTML page. SPA: one entry point, MPA: multiple entry points.
+
+2019.11.28 #4.0
+
+Warning in configuration
+The 'mode' option has not been set, webpack will fallback to 'production' for this value. Set 'mode' option to 'development' or 'production' to enable defaults for each environment.
+You can also set it to 'none' to disable any default behavior. Learn more : https://webpack.js.org/configuration/mode/
+--> webpack의 mode를 적절하게 설정해줘야함.
+
+mode에는 "production", "developement", "none" 3 가지의 option이 있다.
+"production" - enable many optimizations for production builds
+"development" - enable useful tools for development
+"none" - no defaults
+
+package.json에서
+"scripts"를 변경
+{
+"dev:assets" : "WEBPACK_ENV=development webpack"
+"build:assets : "WEBPACK_ENV=production webpack"
+}
+
+webpack.config.js에서
+
+MODE = process.env.WEBPACK_ENV;
+그리고 config에 추가
+{
+mode : MODE,
+}
+
+Error
+You may need an appropriate loader to handle this file type, currently no loaders are configured to process this file. See https://webpack.js.org/concepts#loaders
+--> webpack이 styles.scss는 이해를 못함. 이때는 적절한 loader를 이용해서 webpack에게 가르쳐줘야함.
+--> config에 rules를 추가해줘야 함.
+--> rules는 array 형태. rule이라 함은 webpack에게 어떠한 module을 만나면 이 loader를 실행하라고 말하는 것. loader는 webpack에게 파일을 처리하는 방법을 알려주는 역할.
+
+1. condition을 test
+   test : /\.(scss)\$/ (scss파일인지 체크)
+
+2. scss를 css로 바꾸자
+3. 전체 텍스트 중 그 css의 텍스트를 추출
+   - extract text webpack plugin
+     npm install extract-text-webpack-plugin@next (@next는 현재 가장 최신 버전을 설치)
+
+그러고
+const ExtractCss = require ("extract-text-webpack-plugin") 하고 rules에 다음 추가
+use: ExtractCss.extract([
+{
+loader: "css-loader"
+},
+{
+loader: "postcss-loader"
+},
+{
+loader: "sass-loader"
+}
+])
+
+ExtractCss는 webpack에게 css를 가지고 뭘해야하는 지를 알려준다.
+그 전에 scss를 css까지 변환해야 하는 데 이를 extract()의 인자 안에 array 형태로 넣어준다.
+처음 sass-loader로 처리하고, 그걸 postcss-loader가 처리하고, 마지막에 css-loader가 처리함. 쓰여진 역순으로 처리되는 걸 주의.
+최종 css를 extract()가 css text만 추출해내게 된다.
+sass-loader는 sass 파일을 받아서 normal css로 번역해준다.
+postcss-loader는 중간에서 단순히 번역만 하는 것이 아니라 코드가 호환되도록 해준다. (익스플로러와 호환되도록 prefix를 변경! 등등)
+css-loader는 webpack이 이해할 수 있도록 변환해줌.
+최종적으로 extract()가 순수한 css의 text만 추출해서 어딘가로 보낼 수 있게 해준다.
+
+css-loader resolve error
+->
+npm install css-loader postcss-loader sass-loader로 해결
+
+post-css loader는 호환성을 올려주는 여러 plugin을 가지고 있다
+
+- autoprefixer
+  - 브라우저에 맞게 prefix를 변환해서 호환되도록 해주는 plugin
+- style lint
+
+- autoprefixer
+  npm install autoprefixer
+
+post-css loader options
+
+const autoprefixer = require ("autoprefixer")
+
+{
+loader: "post-css loader",
+options: {
+plugin(){
+return [autoprefixer({browsers :{"cover 99.5%}})] --> plugin()은 사용되는 plugin의 array를 리턴하고, 각 plugin은 option을 그 인자로 가진다.
+}
+}
+}
+
+4. 분리된 css로 저장
+
+plugins: [new ExtractCss("styles.css")]로 결과 파일이 무엇인지를 명시해야 한다.
+
+- .js에 대한 rules은 다음과 같이 하면 됨.
+  {
+  test: /\.(js)\$/,
+  use: [
+  {
+  loader: "babel-loader"
+  }
+  ]
+  }
+
+(npm install babel-loader 필요함)
+
+"scripts" 만들기
+"dev:assets" : "WEBPACK_ENV=development webpack -w" (css 파일을 수정할 때마다 webpack을 끄고 다시 실행해줘야 하는 귀찮음을 방지하기 위해 지켜보는 옵션 -w 추가)
+
+views 파일 변경
+
+- link(rel="stylesheet", href ="/static/styles.css")
+- script(src="/static/main.js")
+
+app.use("/static", express.static("static")) 을 통해서 /static 경로에 접근할때는 static이라는 이름의 directory로 갈 것을 설정해놓아야함.
+
 @babel/polyfil
+
+- babel includes a polyfill that includes a custom regenerator runtime and core-js.
+  This will emulate a full ES2015+ environment (no < Stage 4 proposals) and is intended to be used in an applicator rather than a library/tool. (this polyfill is automatically loaded when using
+  babel-node)
+  --> 브라우저가 완전하지 않은 부분을 충전해주는 역할.
+
+static을 .ignore에 넣어주자
 
 인증- passport라는 middleware 사용
 인증이란, 브라우저 상에 쿠키(cookie)를 설정해주면 쿠키를 통해서 사용자 ID
@@ -826,13 +1097,290 @@ object를 controller에 넘겨준다
 Cookie란
 
 - 브라우저 상에 저장할 수 있는 것
-- 요청(req)에 대해서 백엔드(back-end)로 전송될 정보들이 담겨있음. 자동으로 이뤄짐
+- 요청(req)에 대해서 백엔드(back-end)로 전송될 정보들이 담겨있음. 자동으로 이뤄짐.
+- 클라이언트(웹브라우저)에 쿠키가 있을 때, 서버에 뭔가 요청할 때마다(req가 일어날때) 브라우저가 자동적으로 쿠키들을 서버로 자동적으로 전송해줌.
+
   Passport 쿠키를 생성하고 브라우저에 저장하고 유저에게 해당 쿠키를 제공. 자동으로.
+
+- integration이 매우매우 쉽다.
+
+In modern web applications, authentication can take a variety of forms. Traditionally, users log in by providing a username and password. With the rise of social networking, single sign-on using an OAuth provider such as Facebook or Twitter has become a popular authentication method. Services that expose an API often require token-based credentials to protect access.
+
+Passport recognizes that each application has unique authentication requirements. Authentication mechanisms, known as strategies, are packaged as individual modules. Applications can choose which strategies to employ, without creating unnecessary dependencies.
+
+Strategy
+
+- application 별 authentication mechanisms
+
+app.post('/login', passport.authenticate('local'),
+function(req,res) {
+// If this function gets called, authentication was successful.
+// `req.user` contains the authenticated user.
+res.redirect('/users/' + req.user.username);
+})
+
+authenticate가 성공하면 req.user라는 object를 만들어줌. 바로 현재 로그인한 '그' 사용자.
+쿠키를 만들고, 쿠키를 받고, 어느 유저가 어느 쿠키를 가지고 있는지 기억. 모든걸 알아서 처리해줌.
+
+passport-local-mongoose라는 module
+
+- Passport-Local Mongoose is a Mongoose plugin that simplifies building username and password login with Passport.
+- user functionality를 추가하는 것. User model을 만들때 도움.
+- 기본적인 사용자 인증이 필요한 것들
+
+  - 패스워드 변경
+  - 패스워드 확인
+  - 패스워드 생성
+  - 패스워드 암호화
+    등을 가지고 있음. 가지고 와서 그냥 쓰면 됨.
+
+** static method와 instance method의 차이 : https://www.geeksforgeeks.org/static-methods-vs-instance-methods-java/
+
+사용자를 등록(register)하는 단계
+
+1. Join form에서 필요한 field를 입력받음 (name, email, password)
+2. User 생성
+3. User register() -- passport-local-mongoose에 있는 static method
+   
+passport로 로그인하는 단계 (local authentication)
+
+1. User model을 만들고, passport-local-mongoose를 plugin 해준다.
+2. passport.js에서 passport.use(User.createStrategy())
+   - 이를 위해서 passport passport-local을 설치해준다.
+3. passport.serializeUser(User.serializeUser()) 
+   - 쿠키로 사용자의 id를 보내는것
+4. passport.deserializerUser(User.deserializeUser())
+   - id로 사용자를 파악해서 user 객체를 만드는것
+5. serialize, deserialize로 User의 authentication을 처리 --> passport-local-mongoose의 내장 method임
+6. login 시 passport.authenticate("local")
+7. import session from "express-session"
+   app.use(session({})
+8. import MongoStore from "connect-mongo" // MongoDB session store form Express and Connect
+
+- User model에 passport-local-mongoose plugin 추가
+  UserSchema.plugin(passportLocalMongoose, {usernameField: "email"})
+
+usernameField: specifies the field name that holds the username. Defaults to 'username'. This option can be used if you want to use a different field to hold the username for example "email".
+--> 여기서는 email field를 username으로 하겠다고 정해주는 option ( local strategy에서는 username, password로 로그인하게 됨. 여기서 username을 무엇으로 쓸 것인가를 정하는 것임)
+
+User model을 생성하고 난 다음에는 인증을 실제적으로 만들어야함.
+Strategy를 정해야함. strategy는 login 하는 방식을 말함.
+
+- local은 웹사이트에 id 와 pw를 쳐서 들어가는 방식
+- facebook을 통하냐
+- github을 통하냐
+  등등의 로그인 방식을 말함. 이걸 정해줘야 함.
+
+passport.use(User.createStrategy()) - passport가 local strategy를 형성하도록 함.
+그전에
+npm install passport passport-local 해야함
+
+- passport-facebook, passport-github 등도 있음
+
+  2019.11.28 #6.1
+
+In a typical web application, the credentials used to authenticate a user will only be transmitted during the login request. If authentication succeeds, a session will be established and maintained via a cookie set in the user's browser.
+
+Each subsequent request will not contain credentials, but rather the unique cookie that identifies the session. In order to support login sessions, Passport will serialize and deserialize user instances to and from the session.
 
 Serialization
 
 - 어떤 정보가 cookie로 넘어갈 지 알려주는 역할
+- 지금 웹브라우저(클라이언트)에 있는 사용자에 대해서, 어떤 정보를 가질 수 있느냐.
+  - 쿠키에 있는 정보는 자동으로 백엔드로 넘어간다고 전에 언급함
+- serialization은 어떤 필드가 쿠키에 포함될 것인가를 알려줌
+  - 쿠키는 민감한 정보는 담지 않아야 하고, 작은 것이 좋음 (practice 시에는)
+
+passport.serializeUser(const(user,done)=>
+{
+done(null, user.id);
+}
+)
+
+In this example, only the user ID is serialized to the session, keeping the amount of data stored within the session small. When subsequent requests are received, this ID is used to find the user, which will be restored to req.user.
+위 코드는 쿠키에 user.id만 담으라고 말해주는 것. 사용자가 브라우저에서 쿠키를 열어본다면, 쿠키에는 숫자 하나, 즉 id만 보일것임.
 
 Deserialization
 
 - 어떤 사용자가 해당 필드(쿠키에 있는 정보)에 해당하는지 찾는것
+
+passport.deserializeUser(const(id, done) =>
+{
+User.findById(id, const(err, user) =>
+{
+done(err,user);
+});
+}
+)
+
+serialization은 유저의 필드 하나를 쿠키로 넘기는 역할을 하고
+deserialization은 쿠키에 넘겨진 필드를 가지고 유저를 찾는 역할을 한다
+
+passport-local-mongoose는 위의 serialize,deserialize 기능에 대한 shortcut을 제공한다.
+
+passport-local-mongoose 의 static method options
+-authenticate() Generates a function that is used in Passport's LocalStrategy
+-serializeUser() Generates a function that is used by Passport to serialize users into the session
+-deserializeUser() Generates a function that is used by Passport to deserialize users into the session
+-register(user, password, cb) Convenience method to register a new user instance with a given password. Checks if -username is unique. See login example.
+-findByUsername() Convenience method to find a user instance by it's unique username.
+-createStrategy() Creates a configured passport-local LocalStrategy instance that can be used in passport.
+
+<postJoin controller 수정>
+await user = User({
+name, email
+});
+await User.register(user, password);
+로 사용자를 생성하고 등록한다.
+
+db.users.find({})를 통해서 users db에 등록된 객체들을 살펴보면 객체 속성 중
+salt, hash라는 것이 나온다. password를 암호화 시켜주는 것임.
+지금까지는 user를 register해주기만 한것.
+그래서 쿠키에 생성된 것이 없다. 쿠키를 만들기 위해서는 login을 시켜줘야함.
+
+postJoin controller는 middleware로 역할을 변경.
+(req,res) 에서 (req,res,next)로 변경
+postJoin 이후에 postLogin이 바로 실행되어서 login 시켜주도록.
+postLogin은 postJoin에서 posting된 user, password, email 등의 정보를 받아서 사용할 것임.
+
+app.post('/login',
+passport.authenticate('local'),
+function(req, res) {
+// If this function gets called, authentication was successful.
+// `req.user` contains the authenticated user.
+res.redirect('/users/' + req.user.username);
+});
+
+A redirect is commonly issued after authenticating a request.
+
+app.post('/login',
+passport.authenticate('local', { successRedirect: '/',
+failureRedirect: '/login' }));
+
+passport.authenticate()는
+username과 password를 찾아보도록 설정되어 있음.
+middleware는 다음 함수에 정보를 넘기도록 되어있다.
+
+passport는 사용자를 로그인 시킬 때
+쿠키로 정보를 넘기고
+serialize, deserialize 등의 기능을 지원하고,
+user가 담긴 object를 req에 올려준다.
+
+app.js에 passport를 import하고
+routes들 이전에 (cookieparser 아래에)
+
+app.use(passport.initialize());
+app.use(passport.session());
+을 해준다.
+
+cookieparse로 부터 내려온 쿠키를 이용해서 passport는 초기화하고
+쿠키를 들여다봐서 쿠키 정보에 해당하는 사용자를 찾아준다. 그리고 req.user를 만들어 사용자
+정보를 저장해준다. awesome!
+
+session을 관리하기 위해서는 express-session 필요함.
+import session from "express-session"
+
+app.use(session());
+
+session()은 cookie를 관리할 수 있게 해주며. 여러 option을 줄 수 있다.
+
+option중 secret에 관해서
+
+- 쿠키에 들어있는 session ID를 암호화해주는 옵션. 필수 옵션임.
+- app.use(session({secret : "dfadfasdfasf"}))
+- secret 옵션에 문자열을 입력해서 암호화에 사용함. randomkeygen을 이용하여 랜덤 문자 생성 가능.
+
+This is the secret used to sign the session ID cookie. This can be either a string for a single secret, or an array of multiple secrets. If an array of secrets is provided, only the first element will be used to sign the session ID cookie, while all the elements will be considered when verifying the signature in requests
+
+<resave option>
+Forces the session to be saved back to the session store, even if the session was never modified during the request. Depending on your store this may be necessary, but it can also create race conditions where a client makes two parallel requests to your server and changes made to the session in one request may get overwritten when the other request ends, even if it made no changes (this behavior also depends on what store you're using).
+
+The default value is true, but using the default has been deprecated, as the default will change in the future. Please research into this setting and choose what is appropriate to your use-case. Typically, you'll want false.
+
+How do I know if this is necessary for my store? The best way to know is to check with your store if it implements the touch method. If it does, then you can safely set resave: false. If it does not implement the touch method and your store sets an expiration date on stored sessions, then you likely need resave: true.
+
+<saveUninitialized option>
+Forces a session that is "uninitialized" to be saved to the store. A session is uninitialized when it is new but not modified. Choosing false is useful for implementing login sessions, reducing server storage usage, or complying with laws that require permission before setting a cookie. Choosing false will also help with race conditions where a client makes multiple parallel requests without a session.
+
+The default value is true, but using the default has been deprecated, as the default will change in the future. Please research into this setting and choose what is appropriate to your use-case.
+
+Note if you are using Session in conjunction with PassportJS, Passport will add an empty Passport object to the session for use after a user is authenticated, which will be treated as a modification to the session, causing it to be saved. This has been fixed in PassportJS 0.3.0
+
+
+이러고 나서 로그인 하면 두둥!
+cookie가 생성된 모습을 볼 수 있다.
+쿠키에 만들어진 id는 암호화된 녀석. 
+s%3AaKs9Jyov8TQgbpfgwwg1WHR6wFzkv8Gd.eFqU7WUeFs4fAxe%2BTQd89qEMF5UW6pBVbV6XFkJBmtM 으로 나온다.
+
+웹브라우저를 새로고침 할때마다 (즉 이정보를 웹서버로 전송할때마다)
+서버에서는 passport 인증과정을 호출하고 passport는 id를 가지고 내가 어느 사용자인지 식별한다. 
+즉, req.user는 어플리케이션 상에 계속 존재함. 이게 가능한 이유가 바로 쿠키. 
+쿠키는 express로 보내지고 있음. Express는 session을 이용해서 쿠키를 계속 가지고 있게 됨. 
+
+passport가 그 session을 이용해서 쿠키를 갖게 되고 이걸 가지고 deserialize 해서 user를 파악함. 
+Session은 쿠키를 해독하여 passport로 넘김. passport는 찾은 사용자를 middleware와 routes의 req 객체에 할당
+
+현재는 서버를 restart하게 되면 req.user가 사라진다. 즉 session이 사라진다. 
+왜냐하면 지금은 session 정보, 쿠키 정보들을 메모리에 저장하기 때문. 
+session이 유지되도록 하려면 어떻게 해야할까. 서버가 바뀐다고 해서 session이 사라지게 되면 
+쿠키가 있다고 하더라도 어떤 사용자의 cookie인지 파악을 하지 못함. 
+-> MongoDB를 이용해서 session을 저장. --> connect Mongo
+
+MongoDB session store for Connect and Express
+
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+ 
+app.use(session({
+    secret: 'foo',
+    store: new MongoStore(options)
+}));
+
+session(
+    store : new CokieStore( {mongooseConnection : mongoose.connection}) // 이 저장소를 DB와 연결시켜줌.
+)
+
+이렇게 하면 sessio이 계속 유지됨. 
+
+- 로그인한 사용자의 다른 route 접근을 제한하는 법 (예를 들면 /join은 허용이 안돼야 함)
+  onlyPublic middleware 
+  (req,res,next)=> {
+      if(req.user)
+      {
+          res.redirect(routes.home)
+      }
+      else{
+          next()
+      }
+  }
+
+  onlyPrivate
+
+  2019.12.01 #6.5
+
+  Github login
+  > npm i passport-github
+
+  Github new oAuth application Registration
+  - authorization callback URL
+  - 사용자는 깃헙의 특별한 페이지로 가서 '정보 제공에 동의하는지'에 대해서 대답한 후에 (승인) 사용자를 다시 어플리케이션으로 
+  돌려보내면서 사용자의 정보를 같이 보내줌 (callback) --> http://localhost:4000/auth/github/callback
+
+var GitHubStrategy = require('passport-github').Strategy;
+
+passport.use(new GitHubStrategy({
+    clientID: GITHUB_CLIENT_ID,
+    clientSecret: GITHUB_CLIENT_SECRET,
+    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, cb) {      // Github에서 돌아오면 이 함수가 실행될 것임
+    User.findOrCreate({ githubId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
+
+
+2019.12.02 #6.8
+
+#6.6-6.8 다시 복습할것

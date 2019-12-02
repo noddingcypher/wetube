@@ -17,7 +17,7 @@ export const postJoin = async (req, res, next) => {
         name,
         email
       });
-      await User.register(user, password);
+      await User.register(user, password); // passport-local-mongoose의 static method
       next();
     } catch (error) {
       console.log(error);
@@ -34,8 +34,40 @@ export const postLogin = passport.authenticate("local", {
   successRedirect: routes.home
 });
 
+export const githubLogin = passport.authenticate("github");
+
+export const githubLoginCallback = async (_, __, profile, cb) => {
+  // accessToken과 refreshToken을 사용하지 않을때는 _,__ 과 같이 표현해줄 수 있음
+  console.log(profile);
+  const {
+    _json: { id, avatar_url, name, email }
+  } = profile;
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      user.githubId = id;
+      user.save();
+      return cb(null, user);
+    }
+    const newUser = await User.create({
+      email,
+      name,
+      githubId: id,
+      avatarUrl: avatar_url
+    });
+    return cb(null, newUser);
+  } catch (error) {
+    console.log(error);
+    return cb(error);
+  }
+};
+
+export const postGithubLogin = (req, res) => {
+  res.redirect(routes.home);
+};
+
 export const logout = (req, res) => {
-  // To Do : Process Log out
+  req.logout();
   res.redirect(routes.home);
 };
 
