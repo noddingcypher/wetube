@@ -1,6 +1,6 @@
 import express from "express";
-import routes from "../routes";
 import passport from "passport";
+import routes from "../routes";
 import { home, search } from "../controllers/videoController";
 import {
   postJoin,
@@ -9,7 +9,10 @@ import {
   getLogin,
   postLogin,
   githubLogin,
-  postGithubLogin
+  postGithubLogin,
+  getMe,
+  facebookLogin,
+  postFacebookLogin
 } from "../controllers/userController";
 import { onlyPublic, onlyPrivate } from "../middlewares";
 
@@ -28,8 +31,16 @@ globalRouter.get(routes.search, search);
 globalRouter.get(routes.github, githubLogin);
 globalRouter.get(
   routes.githubCallback,
-  passport.authenticate("github", { failureRedirect: "/login" }),
+  passport.authenticate("github", { failureRedirect: "/login" }), // github login에서는 이 과정이 authentication. 성공하면 home으로 redirect 되도록 하는 과정
   postGithubLogin
 );
 
+globalRouter.get(routes.me, getMe);
+
+globalRouter.get(routes.facebook, facebookLogin);
+globalRouter.get(
+  routes.facebookCallback,
+  passport.authenticate("facebook", { failureRedirect: "/login" }),
+  postFacebookLogin
+);
 export default globalRouter;

@@ -29,14 +29,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(
   session({
-    secret: "process.env.COOKIE_SECRET",
+    secret: "process.env.COOKIE_SECRET", // randomkeygen으로 생성한 임의의 문자열을 여기에 넣으면 됨. 공개되면 안되니 .env에 저장.
     resave: true,
     saveUninitialized: false,
-    store: new CokieStore({ mongooseConnection: mongoose.connection })
+    store: new CokieStore({ mongooseConnection: mongoose.connection }) // re-using existing mongoDB connection
   })
 );
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session()); // session에 의해서 decrypt된 쿠키가 passport로 넘어감.
 
 app.use(localMiddleware);
 

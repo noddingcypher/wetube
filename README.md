@@ -1380,7 +1380,98 @@ passport.use(new GitHubStrategy({
   }
 ));
 
+function(accessToken, refreshToken, profile, cb)에서 
+- cb는 passport로부터 제공되는 callback 함수
+  function verified(err, user, info) {
+              if (err) { return self.error(err); }
+              if (!user) { return self.fail(info); }
+
+              info = info || {};
+              if (state) { info.state = state; }
+              self.success(user, info);
+            }
+- cb 함수는 verified 함수. error 없이 사용자를 만들었는지 확인하려는 용도. 우리가 사용자를 잘 받았음을 확인해줘야 한다. 
+  return cb(null, user)를 하면 passport가 사용자를 찾았음을 인지하게 되어 userID를 쿠키에 넣어준다.
+  function(accessToken, refreshToken, profile, cb) {
+    User.findOrCreate({ githubId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+- 에러가 난 상황에서는 cb(error)를 return하면 사용자를 못 찾거나 에러가 난 것으로 인지한다.
+- 
+Github login 과정
+1. passport.js에 strategy 생성
+2. 사용자를 github으로 보냄. passport.authenticate("github")
+3. callback되면 callback function 상에서 user 생성
+4. Db에 저장된 user를 찾아서 authentication. passport.authentication("github", {failureRedirect: '/login'})
+
 
 2019.12.02 #6.8
 
 #6.6-6.8 다시 복습할것
+
+Authentication re-cap
+
+Local strategy
+1. username, password를 post 방식으로 전달
+2. passport-local-mongoose가 자동으로 체크해서 password가 맞으면
+3. passport에게 맞습니다라고 알리고 passport는 쿠키 생성
+
+Github strategy
+1. github site에서 권한 승인
+2. /auth/github/callback으로 보내줌
+3. passport가 githubLoginCallback이라는 함수를 실행. 이 함수가 github에서 보내준 정보를 받음
+4. 정보 (accessToken, refreshToken, profile, cb)를 이용해서 사용자를 찾거나 생성
+5. cb 함수에 error, user 여부를 알려줌
+6. user가 존재하면 passport는 쿠키를 만들어서 저장하고 브라우저로 보냄.
+
+Facebook authentication 과정
+1. passport.js에 strategy 생성
+2. 사용자를 facebook으로 보냄. passport.authenticate("facebook")
+3. callback되면 callback function 상에서 user 생성
+4. Db에 저장된 user를 찾아서 authentication. passport.authentication("facebook", {failureRedirect: '/login'})
+
+위와 똑같이 하면 되나, github의 경우와 달리 facebook의 callback 때에는 email 정보가 오지 않는다.
+-> facebook developer site에서
+-> status를 live로 바꿔줘야 함.
+
+그럼에도 불구하고 facebook login을 시도하면 facebook에서 다음과 같은 오류 메세지 말해줌. 
+"Insecure Login Blocked: You can't get an access token or log in to this app from an insecure page. Try re-loading the page as https://"
+-> local host가 https가 아니다
+-> localtunnel을 이용해서 https 통로를 만들어줘야 함. 
+npm install -g localtunnel
+lt --port 4000
+-> 하지만 공식적을 공개할 앱을 만들 경우에는 도메인 이름을 만들고, https certificate도 가지고 있어야 함. 여기서는 단지 테스트 목적 
+
+하지만 또 에러 
+-> 여전히 redirect는 http로 가게 됨.
+-> passport.js에서 
+callbackURL을 localtunnel에서 제공한 https 경로로 바꿔줘야함. 
+
+또 에러 
+"Can't Load URL : The domain of this URL isn't included in the app's domains. To be able to load this URL, add all domains and subdomains of your app to 
+the App Domains field in your app settings."
+-> 페이스북 개발자 페이지에서 app setting의 app domains에 도메인들을 추가해줘야함. (안해도 되네)
+-> 그리고 facebook 로그인 탭의 settings에서도 '유효한 OAuth 리디렉션 URI'에 홈 URL과 callback URL을 써준다.
+
+그럼 됨.
+근데 페이스북에서 필요한 정보를 추가해서 받아오고 싶을 때..
+
+passport.js에서 
+
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: process.env.FB_ID,
+      clientSecret: process.env.FB_SECRET,
+      callbackURL: `http://localhost:4000${routes.facebookCallback}`
+    },
+    facebookLoginCallback
+  )
+);
+
+여기에 field를 추가해서 입력한다. 
+profileFields: ['id', 'displayName', 'photos', 'email'],
+scope : ['public_profile', 'email']
+
+
+2019.12.03 #6.11

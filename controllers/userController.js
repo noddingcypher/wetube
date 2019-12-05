@@ -34,13 +34,13 @@ export const postLogin = passport.authenticate("local", {
   successRedirect: routes.home
 });
 
-export const githubLogin = passport.authenticate("github");
+export const githubLogin = passport.authenticate("github"); // 사용자를 github으로 보내서 authenticate 하게 하는 과정
 
 export const githubLoginCallback = async (_, __, profile, cb) => {
-  // accessToken과 refreshToken을 사용하지 않을때는 _,__ 과 같이 표현해줄 수 있음
+  // github page에서 정보 제공 동의를 성공하면 돌아와서 실행되는 함수, accessToken과 refreshToken을 사용하지 않을때는 _,__ 과 같이 표현해줄 수 있음
   console.log(profile);
   const {
-    _json: { id, avatar_url, name, email }
+    _json: { id, avatar_url: avatarUrl, name, email }
   } = profile;
   try {
     const user = await User.findOne({ email });
@@ -53,7 +53,7 @@ export const githubLoginCallback = async (_, __, profile, cb) => {
       email,
       name,
       githubId: id,
-      avatarUrl: avatar_url
+      avatarUrl
     });
     return cb(null, newUser);
   } catch (error) {
@@ -66,14 +66,41 @@ export const postGithubLogin = (req, res) => {
   res.redirect(routes.home);
 };
 
+export const facebookLogin = passport.authenticate("facebook");
+
+export const facebookLoginCallback = (
+  accessToken,
+  refreshToken,
+  profile,
+  cb
+) => {
+  console.log(accessToken, refreshToken, profile, cb);
+};
+
+export const postFacebookLogin = (req, res) => {
+  res.redirect(routes.home);
+};
+
 export const logout = (req, res) => {
   req.logout();
   res.redirect(routes.home);
 };
 
-export const users = (req, res) => res.render("users", { pageTitle: "Users" });
-export const userDetail = (req, res) =>
-  res.render("userDetail", { pageTitle: "User Details" });
+export const getMe = (req, res) => {
+  res.render("userDetail", { pageTitle: "User Details", user: req.user });
+};
+
+export const userDetail = async (req, res) => {
+  const { params: id } = req;
+  try {
+    const user = await User.findById(id);
+
+    res.render("userDetail", { pageTitle: "User Detail", user });
+  } catch (error) {
+    res.redirect(routes.home);
+  }
+};
+
 export const editProfile = (req, res) =>
   res.render("editProfile", { pageTitle: "Edit Profile" });
 export const changePassword = (req, res) =>
