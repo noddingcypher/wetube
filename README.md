@@ -1441,6 +1441,10 @@ Facebook authentication 과정
 npm install -g localtunnel
 lt --port 4000
 -> 하지만 공식적을 공개할 앱을 만들 경우에는 도메인 이름을 만들고, https certificate도 가지고 있어야 함. 여기서는 단지 테스트 목적 
+<localtunnel이 불안정할때>
+ngrok을 쓴다.
+npm install -g ngrok
+ngrok http 4000
 
 하지만 또 에러 
 -> 여전히 redirect는 http로 가게 됨.
@@ -1475,3 +1479,279 @@ scope : ['public_profile', 'email']
 
 
 2019.12.03 #6.11
+
+export const postEditProfile = async (req, res) => {
+  const {
+    body: { name, email },
+    file
+  } = req;
+  try {
+    const user = await User.findByIdAndUpdate(req.user.id, {
+      name,
+      email,
+      avatarUrl: file ? file.path : req.user.avatarUrl
+    });
+  } catch (error) {
+    res.render("editProfile", { pageTitle: "Edit Profile" });
+  }
+};
+
+postEditProfile에서 이미지 업로드를 하지 않을 수도 있잖아? 그때는 
+avatarUrl: file ? file.path : req.user.avatarUrl
+라고 써줘서 업로드를 했을때만 수정되도록 한다. 
+
+changePassword 기능
+- passport-local-mongoose의 changePassword method
+
+changePassword(oldPassword, newPassword, [cb])
+
+if(newPassword !== newPassword1) 이라는 조건 구문을 통해서 
+새 암호를 두번 같게 입력했는지 확인. 이때 같지 않으면 status 400을 return해서 구글 브라우저에게
+오류임을 알려주는 과정이 필요. 그렇지 않으면 status 200으로 return 되어 구글이 암호를 변경하게 됨. 
+
+Videos, Users, Comments는 다음과 같이 연결됨
+- 각 Video에는 해당되는 user와 comment array가 있음
+- 각 comment에는 작성한 user가 있음
+- 각 user에는 작성한 comment array와 video array가 있음
+
+export const postUpload = async (req, res) => {
+  const {
+    body: { title, description },
+    file: { path }
+  } = req;
+  console.log(title, description, path);
+  const newVideo = await Video.create({
+    fileUrl: path,
+    title,
+    description,
+    creator: req.user.id
+  });
+  req.user.videos.push(newVideo.id);
+  req.user.save();
+  res.redirect(routes.videoDetail(newVideo.id));
+};
+
+위 구문을 통해서 업로드할 때 user에 업로드한 video 정보가 들어간다. video에도 역시 사용자의 정보가 들어가고..
+
+만약 video에 들어있는 user ID 정보를 이용해서 해당하는 user object를 가져오고 싶을때 
+--> populate method를 쓴다. populate는 object ID type에만 쓸수 있다. 
+const video = await Video.findById(id).populate("creator");
+
+edit button protection
+- button이 안 보이면 할 수 없다
+- 하지만 key가 있으면 videos/key/edit으로 바로 edit 할 수 있다. 이러면 안된다
+
+export const getEditVideo = async (req, res) => {
+  const {
+    params: { id }
+  } = req;
+  try {
+    const video = await Video.findById(id);
+    if (String(video.creator) !== req.user.id) {
+      throw Error();
+    } else {
+      res.render("editVideo", { pageTitle: `Edit ${video.title}`, video });
+    }
+  } catch (error) {
+    console.log(error);
+    res.redirect(routes.home);
+  }
+};
+
+2019.12.12 #7.4
+
+position relative and absolute
+- position absolute로 설정된 항목은 relative로 설정된 부모 항목을 찾아서 그에 맞춰서 position을 설정한다
+- abolute father도 가능하다. 
+- fixed father도 가능하다. (??)
+
+grid
+https://developer.mozilla.org/ko/docs/Web/CSS/CSS_Grid_Layout/Basic_concepts_of_grid_layout
+
+transition
+
+getElementById
+
+querySelector
+
+자체 video control을 만들고 싶을 때
+https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement
+
+videoPlayer.muted()
+- property와 method의 차이
+- read only가 아닌 property임
+  - muted에 값을 assign할 수 있음.
+  - getter와 setter를 가지고 있음.
+
+mute와 play 같은 경우 htmlmediaevent api에서 상태를 boolean 으로 return해주는 property를 제공하지만
+fullscreen과 관련해서 boolean값을 return해주는 property가 없다
+
+fullscreen API
+https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullScreen
+
+removeEventListener
+- button에 대한 내 action에 대한 반응을 멈출 수 있다
+
+video 재생 시간 
+- video MDN
+- video.duration
+- video.currentTime
+
+2019.12.17 #8.4
+
+HTMLMediaElement.ended
+
+volume controller
+
+CSS 선택자 설명
+http://www.nextree.co.kr/p8468/
+
+비디오 녹화 관련 API
+https://developer.mozilla.org/ko/docs/Web/API/MediaDevices
+
+The srcObject property of the HTMLMediaElement interface sets or returns the object which serves as the source of the media associated with the HTMLMediaElement. The object can be a MediaStream, a MediaSource, a Blob, or a File (which inherits from Blob).
+
+유저의 media 장치에 접근하는 법
+https://developer.mozilla.org/ko/docs/Web/API/MediaDevices/getUserMedia
+- navigator.mediaDevices.getUserMedia가 media stream을 생성
+  const stream = await navigator.mediaDevices.getUserMedia()
+- video.srcObject = stream
+으로 하면 video obejct의 source가 media stream이 됨. 
+
+비디오를 녹화하는 법 - mediaRecorder()
+https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder
+
+** blob
+https://developer.mozilla.org/en-US/docs/Web/API/Blob
+
+addEventListener 대신에 onclick 을 쓸수도 있지만 이렇게 되면
+event 하나당 하나의 response만 정할 수 있다.
+
+어떤 object가 ondataavailable이라는 event를 제공할때
+- recording이 멈출 때 이 event가 생성됨.
+
+mediaRecorder()의 속성상 recording 시작하면 data는 생성되기 시작하지만 접근은 되지 않음.
+디폴트로 녹화가 끝난 이후에 한번에 모든걸 저장하도록 되어 있음. 
+
+blob
+- 0,1로 구성된 파일
+
+파일 다운로드 하는법
+ const { data: videoFile } = event;
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(videoFile);
+  link.download = "recorded.webm";
+  document.body.appendChild(link);
+  link.click();
+
+  ajax
+  - not the soap(simple object access protocol, XML 베이스의 프로토콜)
+  - asynchronous JavaScript and XML
+  - 페이지가 다시 로드되지 않음
+  - single page application
+  - netflix, youtube가 동작하는 방식
+
+기존의 웹 애플리케이션은 브라우저에서 폼을 채우고 이를 웹 서버로 제출(submit)을 하면 하나의 요청으로 웹 서버는 요청된 내용에 따라서 데이터를 가공하여 새로운 웹 페이지를 작성하고 응답으로 되돌려준다. 이때 최초에 폼을 가지고 있던 페이지와 사용자가 이 폼을 채워 결과물로서 되돌려 받은 페이지는 일반적으로 유사한 내용을 가지고 있는 경우가 많다. 결과적으로 중복되는 HTML 코드를 다시 한번 전송을 받음으로써 많은 대역폭을 낭비하게 된다. 대역폭의 낭비는 금전적 손실을 야기할 수 있으며 사용자와 대화(상호 반응)하는 서비스를 만들기 어렵게도 한다.
+
+반면에 Ajax 애플리케이션은 필요한 데이터만을 웹서버에 요청해서 받은 후 클라이언트에서 데이터에 대한 처리를 할 수 있다. 보통 SOAP이나 XML 기반의 웹 서비스 프로토콜이 사용되며, 웹 서버의 응답을 처리하기 위해 클라이언트 쪽에서는 자바스크립트를 쓴다. 웹 서버에서 전적으로 처리되던 데이터 처리의 일부분이 클라이언트 쪽에서 처리 되므로 웹 브라우저와 웹 서버 사이에 교환되는 데이터량과 웹서버의 데이터 처리량도 줄어들기 때문에 애플리케이션의 응답성이 좋아진다. 또한 웹서버의 데이터 처리에 대한 부하를 줄여주는 일이 요청을 주는 수많은 컴퓨터에 대해서 일어나기 때문에 전체적인 웹 서버 처리량도 줄어들게 된다.
+
+장점
+
+페이지 이동없이 고속으로 화면을 전환할 수 있다.
+서버 처리를 기다리지 않고, 비동기 요청이 가능하다.
+수신하는 데이터 양을 줄일 수 있고, 클라이언트에게 처리를 위임할 수도 있다.
+단점
+
+Ajax를 쓸 수 없는 브라우저에 대한 문제가 있다.
+HTTP 클라이언트의 기능이 한정되어 있다.
+페이지 이동없는 통신으로 인한 보안상의 문제
+지원하는 Charset이 한정되어 있다.
+스크립트로 작성되므로 디버깅이 용이하지 않다.
+요청을 남발하면 역으로 서버 부하가 늘 수 있음.
+동일-출처 정책으로 인해 다른 도메인과는 통신이 불가능하다.
+
+2 kinds of URLs
+- /vides/id... 이건 템플릿을 렌더링해줌
+- 렌더링하고 상관없는 url, 동작만 하고 http status code로만 답해주는 url
+
+API
+- 서버와 통신 목적의 url
+- 사용자가 접근할 수 없음
+- url에 렌더링할 수 없음
+
+/api/12/view에 접근하면 view를 늘리기만 하고 렌더링은 일어나지 않음. 이게 작동방식
+
+export const postRegisterView = async (req, res) => {
+  const { params: id } = req;
+  try {
+    const video = await Video.findById(id);
+    video.views += 1;
+    video.save();
+    res.status(200);
+  } catch (error) {
+    res.status(400);
+  } finally {
+    res.end();
+  }
+};
+
+api는 뭔가를 render하지 않고 status로 res 할뿐.
+
+위에서 연결된 템플릿이 없다. 렌더링이 없을것.
+
+이게 API의 개념
+- url로 database에 접근해서 어떤 동작을 하나 렌더링은 따로 하지 않음
+- database로 다른 서비스와 통신하기 위해서 만들어진것
+- db를 변경할 수 있음 
+
+axios 
+- library
+- HTTP 요청을 fancy하게 바꿔줌
+- status code에 접근할 수 있고, 어떻게 접근하는지 볼 수 있음
+
+fetch 
+- HTTP 요청을 수동으로 할 수 있게 해주는 명령어 
+
+listen EADDRINUSE: address already in use :::4000 오류 해결법
+- node.exe 모두 종료
+- powershell에서 taskkill /IM node.exe /F 실행
+
+comment 달기
+
+addComment.js
+
+event.preventDefault() --> 새로고침 되지 않도록 함. 
+
+querySelector 는 argument와 같은 이름의 html component 중 가장 첫번째를 찾음.
+
+API에 접근할 때 사용할 수 있는 방법
+fetch vs axios
+https://hoorooroob.tistory.com/entry/React-React-Naive-TIPS-axios-%EC%99%80-fetch-%EC%96%B4%EB%96%A4-%EA%B2%83%EC%9D%84-%EC%82%AC%EC%9A%A9%ED%95%A0%EA%B9%8C
+-> 이 방식은 html에서 form을 submit 하면 일어나는 일과 같은 방식이다
+
+fake add comment 기능
+- 실제로 db를 보고 댓글을 다는게 아니라
+- status를 듣고 정상적인 상태면 html에 추가해주는 것
+- 실시간인 것처럼 보인다
+
+AWS (amazon web service)
+- S3 : 파일 업로드 서비스
+- storage service (like Dropbox)
+- bucket 단위로 구성됨
+
+Bucket 생성
+- region은 서버가 있는 곳, 주요 사용자들이 있을 곳과 가까운 곳으로
+- bucket은 폴더와 같은 개념으로 보면 된다
+- S3는 버킷이 공개적으로 액세스할 수 URL로 사용되는 것을 허용하기 때문에 선택하는 버킷 이름이 전세계적으로 고유해야 합니다. 다른 계정이 이미 선택한 이름을 가진 버킷을 생성한 경우 다른 이름을 사용해야 합니다
+
+Bucket을 생성하고 우리는 여기에 multer를 이용해서 파일을 업로드하고 싶은것.
+
+IAM - AWS 서비스 중 Security, identity & compliance section
+
+1) 사용자 추가 - 사용자 이름 (wetube) - programmatic access 체크
+
+* programmatic access는 프로그램이 사용하길 원하는 것. 사람이 aws의 자료를 변경하거나 설정을 변경하도록 하고 싶으면 AWS Management Console access를 선택. (패스워드 방식) 
+* 우리는 패스워드 방식 아님. access key와 secret access key로 할거임.
+
+  - 그룹 권한 설정 
+  s3에 접근 권한을 부여한다. 기존의 그룹에 연결시키거나 기존 정책 직접 연결을 통해서 s3 (AmazonS3FullAccess)에 접근하도록 한다)
