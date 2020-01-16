@@ -1,3 +1,5 @@
+import "core-js/stable";
+import "regenerator-runtime/runtime";
 import "./db";
 import dotenv from "dotenv";
 import app from "./app";
@@ -6,7 +8,6 @@ import "./models/Comment";
 import "./models/User";
 
 dotenv.config();
-
 
 const PORT = process.env.PORT || 4000;
 

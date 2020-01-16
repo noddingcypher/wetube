@@ -525,7 +525,7 @@ mongoose.connect()
 - db.on("error", handleError)
 
 위 명령을 실행시켰을 때 init.js에서 ./db를 import하도록 하면 database와 연결된다. (db가 open된다)
-어디서는 db의 object가 import되면 연결되었다고 뜰것이다. (videoController에서 videos라는 fake db를 import한 상태에서 저 명령을 치면 DB에 연결되었다고 뜰것))
+어디서든 db의 object가 import되면 연결되었다고 뜰것이다. (videoController에서 videos라는 fake db를 import한 상태에서 저 명령을 치면 DB에 연결되었다고 뜰것))
 
 MongoDB는 document를 줄여주는 장점
 
@@ -671,7 +671,7 @@ input(type="file", id="file", name="videoFile", required=true, accept="video/\*"
 postUpload controller에서 submit하고 file의 path를 가져오는 법
 
 - 왜냐면 video에 우리는 fileUrl을 저장할 것이기에
-- file을 upload하고 URL을 반환하는 middleware, multar를 사용할 것임
+- file을 upload하고 URL을 반환하는 middleware, multer를 사용할 것임
 
 npm install multer
 upload form에 enctype="multipart/form-data" 추가
@@ -1753,5 +1753,121 @@ IAM - AWS 서비스 중 Security, identity & compliance section
 * programmatic access는 프로그램이 사용하길 원하는 것. 사람이 aws의 자료를 변경하거나 설정을 변경하도록 하고 싶으면 AWS Management Console access를 선택. (패스워드 방식) 
 * 우리는 패스워드 방식 아님. access key와 secret access key로 할거임.
 
-  - 그룹 권한 설정 
+- 그룹 권한 설정 
   s3에 접근 권한을 부여한다. 기존의 그룹에 연결시키거나 기존 정책 직접 연결을 통해서 s3 (AmazonS3FullAccess)에 접근하도록 한다)
+
+- 사용자 생성
+  이 단계에서 access key ID와 secret access key를 보여준다. 이 단계를 떠나면 다시는 이 둘을 알 수가 없음. 
+
+  이걸 반드시 복사해서 보관해놓아야 함. 잃어버리면 사용자를 새로 만들어야 됨. 그리고 이게 노출되면 이걸 아는 사람들이 임의로 db를 바꿔버릴 수 있으니 보안에 신경써야 함. 
+  
+
+  middleware에서 multer 명령문 수정
+
+import multerS3 from "multer-s3";
+import aws from "aws-sdk";
+
+const s3 = new aws.S3({
+  accessKeyId: process.env.AWS_KEY,
+  secretAccessKey: process.env.AWS_PRIVATE_KEY
+});
+
+const multerVideo = multer({
+  storage: multerS3({
+    s3,
+    acl: "public-read",
+    bucket: "wetube-draft/video"
+  })
+});
+const multerAvatar = multer({
+  storage: multerS3({
+    s3,
+    acl: "public-read",
+    bucket: "wetube-draft/avatar"
+  })
+});
+
+현재는 녹화하고 파일을 다운 받을 때 크롬이 파일의 재생 시간을 정해주지 않음. 
+-> get-blob-duration library 사용
+
+fetch
+https://developer.mozilla.org/ko/docs/Web/API/Fetch_API/Fetch%EC%9D%98_%EC%82%AC%EC%9A%A9%EB%B2%95
+https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+
+blob method
+https://developer.mozilla.org/en-US/docs/Web/API/Body/blob
+
+CORS configuration
+https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
+
+Mongo Atlas를 이용해서 AWS 서버에 db를 만들고 데이터를 저장하는 법
+- mongo atlas에서 cluster 만들기
+- user 만들기
+- connection string 확보
+- .env에 MONGO_URL에 복사 (with username, userpassword)
+- mongoose.connect argument로 MONGO_URL 설정하면 db로 연결됨.
+
+만들어진 db collections에 가면
+- session db가 생겨있음.
+  - mongo가 저장해놓은 cookie
+
+session이란?
+https://jiwondh.github.io/2017/01/29/session/
+
+Build production
+- server code를 예전 코드로 변환해줘야 함. 
+- 예전 코드를 이용해서 실행할 폴더 하나를 만들어줘야 함. 
+- 현재는 nodemon babel-node를 이용하고 있는데 이걸 변환해줘야 build가 가능함. 
+
+src 폴더 생성 (wetube 프로젝트 폴더 하위에)
+
+package.json 변경
+
+<오류> 'babel'은(는) 내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는
+배치 파일이 아닙니다. 
+--> npm i --save-dev @babel/cli
+
+"scripts": {
+    "dev:server": "nodemon --exec babel-node init.js --ignore '.scss' --ignore 'static' ",
+    "dev:assets": "cross-env WEBPACK_ENV=development webpack -w",
+    "build:assets": "cross-env WEBPACK_ENV=production webpack",
+    "build:server": "babel src --out-dir build",
+    "build": "npm run build:server && npm run build:assets"
+
+npm run build:server 시행하면 
+--> successfully compiled 21 files with Babel.
+--> 이러고 build라는 폴더가 생성됨
+
+build 폴더 내부에 static 폴더를 보면 css 파일은 사라지고 main.js만 남음 
+&& views 파일도 안 보임. 
+--> 왜냐하면 babel이 모든 js 파일을 찾아서 build 폴더에 담아줌. 
+
+You need to compile the new code into the old code because the server where you're gonna upload the code does not understand new code.
+
+"scripts": {
+    "dev:server": "nodemon --exec babel-node init.js --ignore '.scss' --ignore 'static' ",
+    "dev:assets": "cd src && cross-env WEBPACK_ENV=development webpack -w",
+    "build:assets": "cd src && cross-env WEBPACK_ENV=production webpack",
+    "build:server": "babel src --out-dir build --ignore 'src/assets','src/static','src/webpack.config.js'",
+    "copyAll": "xcopy .\\src\\static .\\build\\static\\ /s /y && xcopy .\\src\\views .\\build\\views\\ /s /y",
+    "build": "npm run build:server && npm run build:assets && npm run copyAll",
+    "prebuild": "rd /s /q build",
+    "start" : "node build/init.js"
+
+모든게 잘 작동한다면 이제 init.js를 동작하면 되는데
+원래는 dev:server에서 babel-node init.js를 했지만 이제는 node init.js라고 해야 함. 왜냐면 옛날 구문으로 바꿨기 때문임.
+
+그러면 ReferenceError: regeneratorRuntime is not defined 에러가 나옴. 
+--> babel/polyfill을 app.js에서 import해야 한다. 이건 우리가 async function을 사용하기 위해서 애초에 깔았던 dependency였음.
+
+만약 babel과 관련된 error가 생긴다면 babel/core와 babel/node를 깔아라. 
+
+heroku
+- hosting service
+
+heroku를 install
+heroku login
+** document에 prepare the app step은 건너뛰어도 된다
+heroku create - 앱을 만든다
+
+https://blog.jaeyoon.io/2018/01/git-crlf.html
