@@ -16,8 +16,8 @@ passport.use(
       clientID: process.env.GH_ID,
       clientSecret: process.env.GH_SECRET,
       callbackURL: process.env.PRODUCTION
-        ? `https://limitless-retreat-51969.herokuapp.com/${routes.githubCallback}`
-        : `https://localhost:4000/${routes.githubCallback}`
+        ? `https://limitless-retreat-51969.herokuapp.com${routes.githubCallback}`
+        : `https://localhost:4000${routes.githubCallback}`
     },
     githubLoginCallback
   )
