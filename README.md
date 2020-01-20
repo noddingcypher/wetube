@@ -1871,3 +1871,41 @@ heroku login
 heroku create - 앱을 만든다
 
 https://blog.jaeyoon.io/2018/01/git-crlf.html
+
+gitbash 설정해서 하기
+
+warning: LF will be replaced by CRLF in package.json.
+The file will have its original line endings in your working directory
+
+혹시 저처럼 이런 error 뜨는 분들은 아래 명령어 사용하시면 됩니다. 
+같은 증상 댓글이 없기에 올려봅니다 ~
+
+git config --global core.autocrlf true
+
+https://blog.jaeyoon.io/2018/01/git-crlf.html
+
+.env 파일에 server URL이 포함되어 있는데 이건 git에서 무시되도록 해놨다.
+근데 heroku는 .env 파일을 사용해야한다.
+이걸 해결하기 위해선?
+heroku-config 설치
+
+Push and pull your Heroku configs to your local environment.
+
+Heavily inspired by ddollar's version, but using the new Heroku cli.
+
+--> heroku plugins:install heroku-config 실행한다
+
+https://www.npmjs.com/package/heroku-config
+
+heroku config:push: Writes the contents of a local file into heroku config
+
+이렇게 하면 된다리. 근데 github login은 아직 안됨.
+
+<배포 환경일 때와 local 환경일 때 차이를 두는 법>
+mongoose.connect(
+  process.env.PRODUCTION ? process.env.MONGO_URL_PROD : process.env.MONGO_URL, 
+  {
+    useNewUrlParser: true,
+    useFindAndModify: false
+  }
+);
