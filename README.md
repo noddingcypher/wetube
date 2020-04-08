@@ -1909,3 +1909,203 @@ mongoose.connect(
     useFindAndModify: false
   }
 );
+
+passport.use(
+  new GithubStrategy(
+    {
+      clientID: process.env.GH_ID,
+      clientSecret: process.env.GH_SECRET,
+      callbackURL: process.env.PRODUCTION
+        ? `https://limitless-retreat-51969.herokuapp.com${routes.githubCallback}`
+        : `https://localhost:4000${routes.githubCallback}`
+    },
+    githubLoginCallback
+  )
+);
+
+github setting에서 developer setting -> OAuth app -> homepage URL이랑 authorization callback URL 수정해줄것
+
+- express flash 
+유저에게 메세지를 보낼 수 있게 하는 module
+html에 임시로 추가하는 것
+  > 로그인 하면 login
+  > 업로드하면 upload 등등의 메세지를 주는 것
+
+https://www.npmjs.com/package/express-flash
+
+npm i express-flash
+
+import flash from "express-flash"
+
+app.use(flash()); // 이렇게 하면 끝
+
+ERROR :
+'WEBPACK_ENV'은 내부 또는 외부 명령 배치 파일이 아닙니다 오류
+-> npm install cross-env 설치
+-> "dev:assets": "cross-env WEBPACK_ENV=development webpack", 수정
+
+https://velog.io/@mollang/191108-webpack-mhk2ps8ziu
+
+view 파일에서는 line comment가 허용되지 않나봄.. 이것때매 한참 헤맴
+
+flash는 메모리에 일시적으로 저장해놨다가 페이지 새로고침이나 이동 시에는 없어짐.
+
+ 에러 구문 E11000 duplicate key error collection: we-tube.users index: username_1 dup key: { username: null }
+ -> https://ajh322.tistory.com/73
+
+ 색상 모음
+ https://flatuicolors.com/palette/defo
+
+
+ Prisma
+ - https://www.prisma.io/
+ - database와 대화하는 귀찮은 일들, 즉 mongoose와 했던 model setting, database 연결, username, password 등의 일들을 prisma가 대신 해줌
+
+Prisma sign in -> add a service -> cd documents에 npm install -g prisma -> prisma login -k eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjazV4eXFqcXpsODdnMDg2MXR3Z25hZmQwIiwiaWF0IjoxNTgwMjIwOTIzLCJleHAiOjE1ODI4MTI5MjN9.vV-C50k2F1pA8zExONs7McclGf-eqdtrSMPC6iuN0WM -> create a new service
+
+-> prisma init bs-service -> demo-server (연습하고 있는 중임..)
+-> /demo-eu1 선택
+-> name for your service : bs-service
+-> name for your stage : dev
+-> generated Prisma client : Prisma JavaScript Client
+
+prisma.yml과 datamodel.prisma가 생성됨
+
+cd bs-service -> code .
+
+npm i -y
+npm init -y 하면 package.json 생김
+
+datamodel.prisma 생김 -> model을 setting함. 
+
+type User {
+  id: ID! @id
+  name: String!
+  email : String!
+  posts : [Posts!]! @connection
+}
+
+type Post {
+  id : ID! @id
+  title : String!
+  content : String!
+  views : Int!
+  creator : User! @connection
+}
+
+여기서 !는 필수 입력 필드라는 뜻.
+@connection은 둘이 연결되어 있다는 뜻.
+
+prisma deploy
+
+  User (Type)
+  + Created type `User`
+  + Created field `id` of type `ID!`
+  + Created field `name` of type `String!`
+  + Created field `email` of type `String!`
+
+  Post (Type)
+  + Created type `Post`
+  + Created field `id` of type `ID!`
+  + Created field `title` of type `String!`
+  + Created field `content` of type `String!`
+  + Created field `views` of type `Int!`
+
+prisma web page에서 보면 bs-service가 생겨있음.
+
+prisma admin에 들어가면 post와 user 가 생겨있음. 이 모든걸 prisma가 해준다는 것임. 
+database가 생겨버림.
+
+어떻게 db와 소통할까?
+
+client를 다운로드 -> admin panel와 node.js를 연결하는 것
+
+-> prisma generate -> prisma client 가 생성됨.
+
+git init
+
+이제 express server를 설치해야함.
+
+npm i express
+ 
+index.js
+
+const express = require("express");
+const bodyParser = require("body-parser");
+const app = express();
+
+app.use(bodyParser.json());
+
+app.listen(3000);
+
+위의 구문을 통해서 server를 생성.
+
+이제 prisma랑 어떻게 소통할까?
+
+const express = require("express");
+const bodyParser = require("body-parser");
+const { prisma } = require("./generated/prisma-client");
+const app = express();
+
+app.use(bodyParser.json());
+
+app.get("/", async (req, res) => {
+  const posts = await prisma.posts();
+  res.json(posts);
+});
+
+app.listen(3000);
+
+-> 결과 화면은 다음과 같다
+[
+{
+id: "ck5zazdcs8qg909353wga9kis",
+title: "something",
+content: "something",
+views: 123
+},
+{
+id: "ck5zb08z5tieb0901v1r9tzie",
+title: "second",
+content: "second",
+views: 12
+}
+]
+
+즉 prisma를 통해서 db를 당신의 pug template에 전달해줄 수 있음.
+
+mongoose, mongoDB, connect() 같은것 없이도 이런 일이 가능함!!
+
+datamodel을 새로 setting 한 이후에는 prisma deploy && prisma generate
+
+REST client - POST request 보내는 법
+- advanced REST client (chrome에서 REST client chrome 검색해서 extension 설치)
+
+
+Real-time nodeJS
+
+<requirements>
+node.JS
+google chrome
+express
+vs code
+git
+mongoDB는 사용하지 않음. 모든 정보들이 웹소켓과 함께 서버의 메모리에 들어감. 
+
+socket.IO
+- realtime engine
+
+gulp
+- webpack을 싫어한다면
+- webpack 만큼 해줄 수 있음
+
+node.JS, express, babel
+
+
+
+
+
+
+
+
+

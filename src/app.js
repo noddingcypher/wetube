@@ -1,4 +1,3 @@
-
 import express from "express";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -8,6 +7,7 @@ import passport from "passport";
 import mongoose from "mongoose";
 import session from "express-session";
 import path from "path";
+import flash from "express-flash";
 import MongoStore from "connect-mongo";
 import { localMiddleware } from "./middlewares";
 import userRouter from "./routers/userRouter";
@@ -38,6 +38,7 @@ app.use(
     store: new CokieStore({ mongooseConnection: mongoose.connection }) // re-using existing mongoDB connection
   })
 );
+app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session()); // session에 의해서 decrypt된 쿠키가 passport로 넘어감.
 
