@@ -44,8 +44,8 @@
     "pug": "^2.0.4",
     "regenerator-runtime": "^0.13.3",
     "sass-loader": "^7.3.1",
-    "webpack": "^4.39.2",
-    "webpack-cli": "^3.3.7"
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
   },
   "scripts": {
     "dev:server": "nodemon --exec babel-node src/init.js --ignore '.scss' --ignore 'static' ",

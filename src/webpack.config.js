@@ -6,6 +6,7 @@ const MODE = process.env.WEBPACK_ENV;
 const ENTRY_FILE = path.resolve(__dirname, "assets", "js", "main.js");
 const OUTPUT_DIR = path.join(__dirname, "static");
 
+console.log(ENTRY_FILE);
 const config = {
   entry: ["@babel/polyfill", ENTRY_FILE],
   mode: MODE,
